@@ -1,5 +1,7 @@
 # QueueFetcher for Django and SQS
 
+[![CircleCI](https://circleci.com/gh/mypebble/django-queue-fetcher.svg?style=svg)](https://circleci.com/gh/mypebble/django-queue-fetcher)
+
 QueueFetcher allows you to deal with Amazon SQS queues
 in an easier manner in Django.
 
