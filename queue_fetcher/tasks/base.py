@@ -4,6 +4,8 @@ import logging
 import json
 from datetime import datetime
 
+import six
+
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.db import transaction
@@ -88,7 +90,7 @@ class QueueFetcher(object):
             # Use transactions by default in case something goes
             # wrong, then the database isn't left in a mess
             with transaction.atomic():
-                if isinstance(q_message, basestring):
+                if isinstance(q_message, six.string_types):
                     q_message = json.loads(q_message)
                 for real_message in q_message:
                     logger.debug(json.dumps(real_message))
