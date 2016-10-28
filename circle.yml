@@ -4,5 +4,5 @@ dependencies:
 
 test:
   override:
-    - sudo pip install .
+    - python setup.py develop
     - python test_project/manage.py test test_project/test_project
