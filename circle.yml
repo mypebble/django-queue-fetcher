@@ -1,7 +1,8 @@
 dependencies:
-    override:
-        - pip install -r dev_requirements.txt
+  override:
+    - pip install -r dev_requirements.txt
 
 test:
-    override:
-        - python test_project/manage.py test
+  override:
+    - python setup.py develop
+    - python test_project/manage.py test test_project/test_project

@@ -21,7 +21,7 @@ WAIT_TIME = 20
 logger = logging.getLogger(__name__)
 
 QUEUES_NOT_SETUP = (
-    "QUEUES is not in your application's settings file." 
+    "QUEUES is not in your application's settings file."
     "This needs to be a dict of `internal name`: `name on amazon`"
 )
 
@@ -92,9 +92,7 @@ class QueueFetcher(object):
             with transaction.atomic():
                 if isinstance(q_message, six.string_types):
                     q_message = json.loads(q_message)
-                for real_message in q_message:
-                    logger.debug(json.dumps(real_message))
-                    self.process(real_message)
+                self.process(q_message)
         except MessageError as ex:
             logger.error(unicode(ex))
             logger.info('Message could not be processed')

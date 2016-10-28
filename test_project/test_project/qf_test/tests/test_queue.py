@@ -9,10 +9,10 @@ from queue_fetcher.tasks import MessageError
 class SampleTestQueueTestCase(TestCase):
     def test_full_integration(self):
         queue = sqs.get_queue('test')
-        queue.add_message([{
+        queue.add_message({
             'message_type': 'sample',
             'test': 'hello'
-        }])
+        })
 
         with self.assertRaises(SampleCalledException):
             task = SampleQueueTask()
@@ -21,10 +21,24 @@ class SampleTestQueueTestCase(TestCase):
     def test_simple(self):
         with self.assertRaises(SampleCalledException):
             task = SampleQueueTask()
-            task.process([{
+            task.process({
                 'message_type': 'sample',
                 'test': 'hello'
-            }])
+            })
+
+    def test_multiple(self):
+        with self.assertRaises(SampleCalledException):
+            task = SampleQueueTask()
+            task.process([
+                {
+                    'message_type': 'sample',
+                    'test': 'hello'
+                },
+                {
+                    'message_type': 'sample',
+                    'test': 'hello again'
+                }
+            ])
 
     def test_unknown_message(self):
         with self.assertRaises(MessageError):
