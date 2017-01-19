@@ -17,12 +17,12 @@ CLASSIFIERS = [
 try:
     with open('README.rst') as f:
         long_description = f.read()
-except FileNotFoundError:
+except IOError:
     long_description = ''
 
 setup(
     name='queue-fetcher',
-    version='1.1.1',
+    version='1.1.2',
     description="QueueFetcher makes dealing with SQS queues in Django easier",
     author="SF Software limited t/a Pebble",
     author_email="sysadmin@mypebble.co.uk",
