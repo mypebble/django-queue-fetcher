@@ -16,7 +16,7 @@ CLASSIFIERS = [
 
 setup(
     name='queue-fetcher',
-    version='1.1.0',
+    version='1.1.1',
     description="QueueFetcher makes dealing with SQS queues in Django easier",
     author="SF Software limited t/a Pebble",
     author_email="sysadmin@mypebble.co.uk",

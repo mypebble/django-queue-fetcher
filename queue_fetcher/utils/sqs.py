@@ -3,6 +3,8 @@
 import json
 import logging
 
+import six
+
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 
@@ -55,7 +57,7 @@ def send_message(queue, message):
         logger.info('New message on queue {}: {}'.format(
             queue, json.dumps(message)))
     else:
-        if not isinstance(message, basestring):
+        if not isinstance(message, six.string_types):
             message = json.dumps(message)
 
         q_message = queue.new_message(message)
