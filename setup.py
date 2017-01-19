@@ -14,6 +14,12 @@ CLASSIFIERS = [
 ]
 
 
+try:
+    with open('README.rst') as f:
+        long_description = f.read()
+except FileNotFoundError:
+    long_description = ''
+
 setup(
     name='queue-fetcher',
     version='1.1.1',
@@ -26,4 +32,5 @@ setup(
     zip_safe=False,
     install_requires=['six'],
     classifiers=CLASSIFIERS,
+    long_description=long_description,
 )
