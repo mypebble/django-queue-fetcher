@@ -96,7 +96,7 @@ class QueueFetcher(object):
                     q_message = json.loads(q_message)
                 self.process(q_message)
         except MessageError as ex:
-            logger.error(str(ex))
+            logger.error(six.text_type(ex))
             logger.info('Message could not be processed')
         else:
             rsp = True
