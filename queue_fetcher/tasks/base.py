@@ -37,6 +37,13 @@ class QueueFetcher(object):
     """Deals with fetching things from an Amazon SQS queue
     """
     queue = None
+    region = 'eu-west-1'
+
+    def get_queue(self):
+        return self.queue
+
+    def get_region(self):
+        return self.region
 
     def run(self):
         """Polls the messaging queue for any messages
@@ -50,16 +57,16 @@ class QueueFetcher(object):
     def _prerun(self):
         """Setup the QueueFetcher for getting messages from SQS
         """
-        if self.queue is None:
+        if self.get_queue() is None:
             raise AttributeError('QueueFetcher.queue is not set')
 
         if not hasattr(settings, 'QUEUES'):
             raise ImproperlyConfigured(QUEUES_NOT_SETUP)
 
-        queue_name = settings.QUEUES[self.queue]
+        queue_name = settings.QUEUES[self.get_queue()]
         logger.info(u'Polling {queue} for messages'.format(
             queue=queue_name))
-        self._queue = sqs.get_queue(queue_name)
+        self._queue = sqs.get_queue(queue_name, self.get_region())
 
     def run_once(self):
         """Run the queue fetcher just once

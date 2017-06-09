@@ -28,11 +28,11 @@ SQS_NOT_SETUP = (
 _mocks = {}
 
 
-def get_connection():
-    return connect_to_region('eu-west-1')
+def get_connection(region='eu-west-1'):
+    return connect_to_region(region)
 
 
-def get_queue(name):
+def get_queue(name, region='eu-west-1'):
     if not hasattr(settings, 'TEST_SQS'):
         raise ImproperlyConfigured(SQS_NOT_SETUP)
     if settings.TEST_SQS:
@@ -40,7 +40,7 @@ def get_queue(name):
             _mocks[name] = MockQueue(name)
         return _mocks[name]
     else:
-        region = get_connection()
+        region = get_connection(region)
         queue = region.get_queue(name)
         queue.set_message_class(message.RawMessage)
         return queue
