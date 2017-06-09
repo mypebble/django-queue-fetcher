@@ -1,5 +1,7 @@
 """Base classes for background tasks
 """
+from __future__ import unicode_literals
+
 import logging
 import json
 from datetime import datetime
@@ -101,7 +103,7 @@ class QueueFetcher(object):
                     q_message = json.loads(q_message)
                 self.process(q_message)
         except MessageError as ex:
-            logger.error(unicode(ex))
+            logger.error(six.text_type(ex))
             logger.info('Message could not be processed')
         else:
             rsp = True
