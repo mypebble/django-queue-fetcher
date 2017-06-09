@@ -37,6 +37,7 @@ class QueueFetcher(object):
     """Deals with fetching things from an Amazon SQS queue
     """
     queue = None
+    region = 'eu-west-1'
 
     def run(self):
         """Polls the messaging queue for any messages
@@ -59,7 +60,7 @@ class QueueFetcher(object):
         queue_name = settings.QUEUES[self.queue]
         logger.info(u'Polling {queue} for messages'.format(
             queue=queue_name))
-        self._queue = sqs.get_queue(queue_name)
+        self._queue = sqs.get_queue(queue_name, self.region)
 
     def run_once(self):
         """Run the queue fetcher just once

@@ -22,7 +22,7 @@ except IOError:
 
 setup(
     name='queue-fetcher',
-    version='1.3.0',
+    version='1.3.1',
     description="QueueFetcher makes dealing with SQS queues in Django easier",
     author="SF Software limited t/a Pebble",
     author_email="sysadmin@mypebble.co.uk",
