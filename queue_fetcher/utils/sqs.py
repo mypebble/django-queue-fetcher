@@ -39,6 +39,13 @@ def get_queue(name, region='eu-west-1'):
         if name not in _mocks:
             _mocks[name] = MockQueue(name)
         return _mocks[name]
+    elif name.startswith('arn:aws:sqs:'):
+        # This is an ARN
+        _, _, _, region, account, queue = name.split(':')
+        region = get_connection(region)
+        queue = region.get_queue(queue, account)
+        queue.set_message_class(message.RawMessage)
+        return queue
     else:
         region = get_connection(region)
         queue = region.get_queue(name)
