@@ -13,7 +13,7 @@ from boto.sqs import connect_to_region, message as boto_message
 from queue_fetcher.utils.mock_sqs import MockQueue
 
 
-_OUTBOX = {}
+outbox = {}
 
 
 logger = logging.getLogger(__name__)
@@ -89,9 +89,9 @@ def send_message(queue, message):
 
     if test_sqs:
         # Test Mode: Don't even try and send it!
-        if queue.name not in _OUTBOX:
-            _OUTBOX[queue.name] = []
-        _OUTBOX[queue.name].append(message)
+        if queue.name not in outbox:
+            outbox[queue.name] = []
+        outbox[queue.name].append(message)
         logger.info('New message on queue %s: %s',
                     queue.name, json.dumps(message))
     else:
@@ -118,6 +118,6 @@ def requeue(queue, message):
 def clear_outbox():
     """Clear the test outbox.
     """
-    keys = [k for k in _OUTBOX]
+    keys = [k for k in outbox]
     for key in keys:
-        del _OUTBOX[key]
+        del outbox[key]
