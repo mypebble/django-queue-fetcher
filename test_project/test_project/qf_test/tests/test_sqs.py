@@ -19,8 +19,8 @@ class SQSTestCase(TestCase):
             'this': 'should work'
         })
         # It should drop into the outbox
-        self.assertEquals(len(sqs.outbox['test']), 1)
-        self.assertEquals(sqs.outbox['test'][0], {
+        self.assertEquals(len(sqs._OUTBOX['test']), 1)
+        self.assertEquals(sqs._OUTBOX['test'][0], {
             'message_type': 'demo',
             'this': 'should work'
         })

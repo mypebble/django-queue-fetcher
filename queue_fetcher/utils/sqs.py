@@ -8,12 +8,12 @@ import six
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 
-from boto.sqs import connect_to_region, message
+from boto.sqs import connect_to_region, message as boto_message
 
 from queue_fetcher.utils.mock_sqs import MockQueue
 
 
-outbox = {}
+_OUTBOX = {}
 
 
 logger = logging.getLogger(__name__)
@@ -25,44 +25,75 @@ SQS_NOT_SETUP = (
 )
 
 
-_mocks = {}
+_MOCKS = {}
 
 
 def get_connection(region='eu-west-1'):
+    """return the connection to the AWS region.
+    """
     return connect_to_region(region)
 
 
-def get_queue(name, region='eu-west-1'):
-    if not hasattr(settings, 'TEST_SQS'):
+def _is_arn(name):
+    """Return whether the given name is an ARN.
+    """
+    return name.startswith('arn:aws:sqs:')
+
+
+def get_queue(name, region_name='eu-west-1', account=None):
+    """Return the AWS Queue Object referenced by name.
+
+    You can specify a region_name or account to get a specific queue.
+    The name can also be an ARN, overriding the region_name and account set
+    here.
+
+    If TEST_SQS is set in settings, this will return a mock object.
+    NOTE: TEST_SQS must be set to either True or False for this to work.
+    """
+    try:
+        test_sqs = settings.TEST_SQS
+    except AttributeError:
         raise ImproperlyConfigured(SQS_NOT_SETUP)
-    if settings.TEST_SQS:
-        if name not in _mocks:
-            _mocks[name] = MockQueue(name)
-        return _mocks[name]
-    elif name.startswith('arn:aws:sqs:'):
-        # This is an ARN
-        _, _, _, region, account, queue = name.split(':')
-        region = get_connection(region)
-        queue = region.get_queue(queue, account)
-        queue.set_message_class(message.RawMessage)
-        return queue
+
+    if test_sqs:
+        if name not in _MOCKS:
+            _MOCKS[name] = MockQueue(name)
+        queue = _MOCKS[name]
     else:
-        region = get_connection(region)
-        queue = region.get_queue(name)
-        queue.set_message_class(message.RawMessage)
-        return queue
+        if _is_arn(name):
+            region_name, account, queue_name = name.split(':')[3:]
+
+        region = get_connection(region_name)
+
+        if account is not None:
+            queue = region.get_queue(queue_name, account)
+        else:
+            queue = region.get_queue(name)
+
+        queue.set_message_class(boto_message.RawMessage)
+
+    return queue
 
 
 def send_message(queue, message):
-    if not hasattr(settings, 'TEST_SQS'):
+    """Send message on queue.
+
+    This handles the nitty-gritty of interacting with SQS from your Django app.
+    If TEST_SQS is set in settings, this will print the output to console.
+    NOTE: TEST_SQS must be set to either True or False for this to work.
+    """
+    try:
+        test_sqs = settings.TEST_SQS
+    except AttributeError:
         raise ImproperlyConfigured(SQS_NOT_SETUP)
-    if settings.TEST_SQS:
+
+    if test_sqs:
         # Test Mode: Don't even try and send it!
-        if queue.name not in outbox:
-            outbox[queue.name] = []
-        outbox[queue.name].append(message)
-        logger.info('New message on queue {}: {}'.format(
-            queue, json.dumps(message)))
+        if queue.name not in _OUTBOX:
+            _OUTBOX[queue.name] = []
+        _OUTBOX[queue.name].append(message)
+        logger.info('New message on queue %s: %s',
+                    queue.name, json.dumps(message))
     else:
         if not isinstance(message, six.string_types):
             message = json.dumps(message)
@@ -85,5 +116,8 @@ def requeue(queue, message):
 
 
 def clear_outbox():
-    global outbox
-    outbox = {}
+    """Clear the test outbox.
+    """
+    keys = [k for k in _OUTBOX]
+    for key in keys:
+        del _OUTBOX[key]
