@@ -66,7 +66,7 @@ class ExampleTestCase(QueueTestCase):
     def test_my_app(self):
         """
         """
-        fixture = self.get_json('exampleapp/test_data.json')
+        fixture = self.get_json('exampleapp/test.sqs.json')
         task = ExampleTaskClass()
         task.read(fixture)
 
