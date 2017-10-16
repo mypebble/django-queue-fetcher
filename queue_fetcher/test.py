@@ -34,7 +34,7 @@ class QueueTestCase(TestCase):
         """Retrieve the specified fixture.
         """
         parts = name.split('/')
-        path = join(settings.PATH_SITE_ROOT,
+        path = join(settings.BASE_DIR,
                     parts[0],
                     'fixtures',
                     parts[0],
