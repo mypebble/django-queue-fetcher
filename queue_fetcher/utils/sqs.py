@@ -29,7 +29,7 @@ _MOCKS = {}
 
 
 def get_connection(region='eu-west-1'):
-    """return the connection to the AWS region.
+    """Return the connection to the AWS region.
     """
     return connect_to_region(region)
 

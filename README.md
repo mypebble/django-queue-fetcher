@@ -41,7 +41,34 @@ class SampleQueueTask(QueueFetcher):
 ```
 
 QueueFetcher expects messages from SQS to contain
-a list of events, with each event containg a `message_type`
+a list of events, with each event containing a `message_type`
 attribute of something like `update_transaction`.
 
 This is then dispatched to a function prefixed with `process_`.
+
+### Testing your Code
+
+The `queue-fetcher` app includes a `QueueTestCase` class that removes the need
+to handle SQS in your test code. To use it, simple extend the class and use
+`get_yaml` or `get_json` to get your fixtures, located in the same app as your
+test.
+
+```python
+from queue_fetcher.test import QueueTestCase
+
+from .tasks import ExampleTaskClass
+
+
+class ExampleTestCase(QueueTestCase):
+    """
+    """
+
+    def test_my_app(self):
+        """
+        """
+        fixture = self.get_json('exampleapp/test_data.json')
+        task = ExampleTaskClass()
+        task.read(fixture)
+
+        # Insert your assertions here
+```
