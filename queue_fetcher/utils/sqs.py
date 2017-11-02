@@ -95,7 +95,11 @@ def send_message(queue, message):
         logger.info('New message on queue %s: %s',
                     queue.name, json.dumps(message))
     else:
-        if not isinstance(message, six.string_types):
+        is_text = (
+            isinstance(message, six.string_types)
+            or isinstance(message, six.binary_type)
+        )
+        if not is_text:
             message = json.dumps(message)
 
         q_message = queue.new_message(message)
