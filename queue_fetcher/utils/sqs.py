@@ -97,7 +97,7 @@ def send_message(queue, message):
     else:
         is_text = (
             isinstance(message, six.string_types)
-            or isinstance(message, bytes)
+            or isinstance(message, six.binary_type)
         )
         if not is_text:
             message = json.dumps(message)
