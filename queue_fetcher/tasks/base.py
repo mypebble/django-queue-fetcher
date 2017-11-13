@@ -1,6 +1,6 @@
 """Base classes for background tasks
 """
-from __future__ import unicode_literals
+from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
 import json
@@ -38,18 +38,29 @@ class MessageError(Exception):
 class QueueFetcher(object):
     """Deals with fetching things from an Amazon SQS queue
     """
+
     queue = None
     region = 'eu-west-1'
+    visibility_timeout = None
+
+    def __init__(self):
+        """Setup internal variables.
+        """
+        self._queue = None
 
     def get_queue(self):
+        """Return the queue.
+        """
         return self.queue
 
     def get_region(self):
+        """Return the region lookup.
+        """
         return self.region
 
     def run(self):
-        """Polls the messaging queue for any messages
-        and asks the implementor to deal with them
+        """Poll the messaging queue for any messages and asks the implementer
+        to deal with them.
         """
         self._prerun()
 
@@ -57,7 +68,7 @@ class QueueFetcher(object):
             self._run()
 
     def _prerun(self):
-        """Setup the QueueFetcher for getting messages from SQS
+        """Setup the QueueFetcher for getting messages from SQS.
         """
         if self.get_queue() is None:
             raise AttributeError('QueueFetcher.queue is not set')
@@ -66,33 +77,40 @@ class QueueFetcher(object):
             raise ImproperlyConfigured(QUEUES_NOT_SETUP)
 
         queue_name = settings.QUEUES[self.get_queue()]
-        logger.info(u'Polling {queue} for messages'.format(
-            queue=queue_name))
+        logger.info('Polling %s for messages',
+                    queue_name)
+
         self._queue = sqs.get_queue(queue_name, self.get_region())
 
     def run_once(self):
-        """Run the queue fetcher just once
+        """Run the queue fetcher just once.
         """
         self._prerun()
         self._run()
 
     def _run(self):
+        """Do the actual queue_fetcher execution.
+        """
         messages = self._queue.get_messages(
             BATCH_SIZE,
-            wait_time_seconds=WAIT_TIME)
+            wait_time_seconds=WAIT_TIME,
+            visibility_timeout=self.visibility_timeout)
+
         if len(messages):
-            logger.info(u'{} Received {} messages'.format(
-                datetime.now(),
-                len(messages)))
+            logger.info('%s Received %d messages',
+                        datetime.now().isoformat(),
+                        len(messages))
+
             for message in messages:
                 if self.read(message.get_body()):
                     self._queue.delete_message(message)
 
     def read(self, q_message):
-        """Process a raw message from Amazon SQS. Retruns
-        true if processed without error
+        """Process a raw message from Amazon SQS.
 
-        Also used for testing
+        This can be used for testing.
+
+        :returns: `True` if successful, otherwise `False`
         """
         rsp = False
         try:
@@ -107,12 +125,14 @@ class QueueFetcher(object):
             logger.info('Message could not be processed')
         else:
             rsp = True
+
         return rsp
 
     def process(self, msg):
         """Process the message passed in
 
-        @param msg Python object of message
+        :type msg: list, tuple or dict
+        :param msg: Python object of message
         """
         if isinstance(msg, (list, tuple)):  # Handle somewhat invalid data
             for message_item in msg:
