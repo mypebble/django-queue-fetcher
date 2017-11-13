@@ -46,6 +46,29 @@ attribute of something like `update_transaction`.
 
 This is then dispatched to a function prefixed with `process_`.
 
+### Visibility Timeout
+
+Tasks run from Django Queue Fetcher can, when they hit an error, keep thrashing
+your SQS queues. We recommend you set a `visibility_timeout` on each task to
+minimise your costs and any errors you send to your logs:
+
+```python
+from queue_fetcher.tasks import QueueFetcher
+
+
+class MyQueueFetcher(QueueFetcher):
+    """Same Queue Fetcher.
+    """
+
+    queue = 'test'
+    visibility_timeout = 60  # Tell SQS to give us 60 seconds to process
+
+    def process_my_message(self, msg):
+        """Process a message.
+        """
+        return True
+```
+
 ### Testing your Code
 
 The `queue-fetcher` app includes a `QueueTestCase` class that removes the need
