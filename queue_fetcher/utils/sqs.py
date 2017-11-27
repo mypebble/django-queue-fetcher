@@ -27,6 +27,19 @@ SQS_NOT_SETUP = (
 _MOCKS = {}
 
 
+def _get_sqs_queue(region_name, queue_name, account=None):
+    sqs = boto3.resource('sqs', region_name=region_name)
+
+    if account is not None:
+        queue = sqs.get_queue_by_name(
+                QueueName=queue_name,
+                QueueOwnerAWSAccountId=account)
+    else:
+        queue = sqs.get_queue_by_name(QueueName=queue_name)
+
+    return queue
+
+
 def _is_arn(name):
     """Return whether the given name is an ARN.
     """
@@ -62,9 +75,11 @@ def get_queue(name, region_name='eu-west-1', account=None):
         sqs = boto3.resource('sqs', region_name=region_name)
 
         if account is not None:
-            queue = sqs.get_queue_by_name(queue_name, account)
+            queue = sqs.get_queue_by_name(
+                    QueueName=queue_name,
+                    QueueOwnerAWSAccountId=account)
         else:
-            queue = sqs.get_queue_by_name(queue_name)
+            queue = sqs.get_queue_by_name(QueueName=queue_name)
 
     return queue
 

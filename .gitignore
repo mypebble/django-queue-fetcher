@@ -92,3 +92,5 @@ ENV/
 # VS Code
 .vscode
 tags
+
+.DS_Store
