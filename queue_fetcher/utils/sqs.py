@@ -55,20 +55,23 @@ def get_queue(name, region_name='eu-west-1', account=None):
     except AttributeError:
         raise ImproperlyConfigured(SQS_NOT_SETUP)
 
+    if _is_arn(name):
+        region_name, account, queue_name = name.split(':')[3:]
+
+    if account is None:
+        queue_name = name
+
     if test_sqs:
         if name not in _MOCKS:
-            _MOCKS[name] = MockQueue(name)
-        queue = _MOCKS[name]
+            _MOCKS[queue_name] = MockQueue(queue_name)
+        queue = _MOCKS[queue_name]
     else:
-        if _is_arn(name):
-            region_name, account, queue_name = name.split(':')[3:]
-
         region = get_connection(region_name)
 
         if account is not None:
             queue = region.get_queue(queue_name, account)
         else:
-            queue = region.get_queue(name)
+            queue = region.get_queue(queue_name)
 
         queue.set_message_class(boto_message.RawMessage)
 
