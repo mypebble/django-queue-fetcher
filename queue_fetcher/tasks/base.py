@@ -92,7 +92,7 @@ class QueueFetcher(object):
         """Do the actual queue_fetcher execution.
         """
         messages = self._queue.receive_messages(
-            MaxNumberOfMessage=BATCH_SIZE,
+            MaxNumberOfMessages=BATCH_SIZE,
             WaitTimeSeconds=WAIT_TIME,
             VisibilityTimeout=self.visibility_timeout)
 
