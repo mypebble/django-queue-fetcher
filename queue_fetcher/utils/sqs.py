@@ -74,12 +74,20 @@ def get_queue(name, region_name='eu-west-1', account=None):
     else:
         sqs = boto3.resource('sqs', region_name=region_name)
 
-        if account is not None:
-            queue = sqs.get_queue_by_name(
-                    QueueName=queue_name,
-                    QueueOwnerAWSAccountId=account)
-        else:
-            queue = sqs.get_queue_by_name(QueueName=queue_name)
+        if sqs is None:
+            raise Exception("could not initialise SQS Resource")
+
+        try:
+            if account is not None:
+                queue = sqs.get_queue_by_name(
+                        QueueName=queue_name,
+                        QueueOwnerAWSAccountId=account)
+            else:
+                queue = sqs.get_queue_by_name(QueueName=queue_name)
+
+        except ClientError as e:
+            print("Error getting queue for name: "
+                  "{} - {}".format(queue_name, e))
 
     return queue
 
