@@ -1,3 +1,4 @@
+from os import path
 from setuptools import setup, find_packages
 
 
@@ -13,16 +14,17 @@ CLASSIFIERS = [
     'Framework :: Django',
 ]
 
+README_FILE = path.join(path.dirname(path.abspath(__file__)), 'README.md')
 
 try:
-    with open('README.rst') as f:
-        long_description = f.read()
-except IOError:
-    long_description = ''
+    import m2r
+    LONG_DESCRIPTION = m2r.parse_from_file(README_FILE)
+except Exception:
+    LONG_DESCRIPTION = ''
 
 setup(
     name='queue-fetcher',
-    version='1.8.1',
+    version='2.0.0',
     description="QueueFetcher makes dealing with SQS queues in Django easier",
     author="SF Software limited t/a Pebble",
     author_email="sysadmin@mypebble.co.uk",
@@ -32,5 +34,5 @@ setup(
     zip_safe=False,
     install_requires=['six'],
     classifiers=CLASSIFIERS,
-    long_description=long_description,
+    long_description=LONG_DESCRIPTION,
 )
