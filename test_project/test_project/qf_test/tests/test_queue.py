@@ -64,7 +64,7 @@ class SampleTestQueueTestCase(TestCase):
         task = VisibilityTask()
         task.run_once()
 
-        self.assertTrue(mock_queue.get_messages.called)
-        call_args = mock_queue.get_messages.call_args[1]
+        self.assertTrue(mock_queue.receive_messages.called)
+        call_args = mock_queue.receive_messages.call_args[1]
 
-        self.assertEqual(call_args['visibility_timeout'], 30)
+        self.assertEqual(call_args['VisibilityTimeout'], 30)

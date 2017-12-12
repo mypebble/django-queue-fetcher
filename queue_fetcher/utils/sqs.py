@@ -3,12 +3,11 @@
 import json
 import logging
 
+import boto3
 import six
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
-
-from boto.sqs import connect_to_region, message as boto_message
 
 from queue_fetcher.utils.mock_sqs import MockQueue
 
@@ -28,10 +27,17 @@ SQS_NOT_SETUP = (
 _MOCKS = {}
 
 
-def get_connection(region='eu-west-1'):
-    """Return the connection to the AWS region.
-    """
-    return connect_to_region(region)
+def _get_sqs_queue(region_name, queue_name, account=None):
+    sqs = boto3.resource('sqs', region_name=region_name)
+
+    if account is not None:
+        queue = sqs.get_queue_by_name(
+                QueueName=queue_name,
+                QueueOwnerAWSAccountId=account)
+    else:
+        queue = sqs.get_queue_by_name(QueueName=queue_name)
+
+    return queue
 
 
 def _is_arn(name):
@@ -66,14 +72,22 @@ def get_queue(name, region_name='eu-west-1', account=None):
             _MOCKS[queue_name] = MockQueue(queue_name)
         queue = _MOCKS[queue_name]
     else:
-        region = get_connection(region_name)
+        sqs = boto3.resource('sqs', region_name=region_name)
 
-        if account is not None:
-            queue = region.get_queue(queue_name, account)
-        else:
-            queue = region.get_queue(queue_name)
+        if sqs is None:
+            raise Exception("could not initialise SQS Resource")
 
-        queue.set_message_class(boto_message.RawMessage)
+        try:
+            if account is not None:
+                queue = sqs.get_queue_by_name(
+                        QueueName=queue_name,
+                        QueueOwnerAWSAccountId=account)
+            else:
+                queue = sqs.get_queue_by_name(QueueName=queue_name)
+
+        except ClientError as e:
+            print("Error getting queue for name: "
+                  "{} - {}".format(queue_name, e))
 
     return queue
 
@@ -105,8 +119,7 @@ def send_message(queue, message):
         if not is_text:
             message = json.dumps(message)
 
-        q_message = queue.new_message(message)
-        queue.write(q_message)
+        queue.send_message(MessageBody=message)
 
 
 def queue_send(queue, message):

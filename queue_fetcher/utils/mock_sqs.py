@@ -4,10 +4,10 @@
 
 class MockMessage(object):
     def __init__(self, body):
-        self._body = body
+        self.body = body
 
-    def get_body(self):
-        return self._body
+    def delete():
+        pass
 
 
 class MockQueue(object):
@@ -18,7 +18,7 @@ class MockQueue(object):
     def add_message(self, msg):
         self._inbox.append(MockMessage(msg))
 
-    def get_messages(self, *args, **kwargs):
+    def receive_messages(self, *args, **kwargs):
         i = self._inbox
         self._inbox = []
         return i

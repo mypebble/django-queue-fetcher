@@ -91,10 +91,10 @@ class QueueFetcher(object):
     def _run(self):
         """Do the actual queue_fetcher execution.
         """
-        messages = self._queue.get_messages(
-            BATCH_SIZE,
-            wait_time_seconds=WAIT_TIME,
-            visibility_timeout=self.visibility_timeout)
+        messages = self._queue.receive_messages(
+            MaxNumberOfMessages=BATCH_SIZE,
+            WaitTimeSeconds=WAIT_TIME,
+            VisibilityTimeout=self.visibility_timeout)
 
         if len(messages):
             logger.info('%s Received %d messages',
@@ -102,8 +102,8 @@ class QueueFetcher(object):
                         len(messages))
 
             for message in messages:
-                if self.read(message.get_body()):
-                    self._queue.delete_message(message)
+                if self.read(message.body):
+                    message.delete()
 
     def read(self, q_message):
         """Process a raw message from Amazon SQS.

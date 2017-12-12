@@ -8,7 +8,6 @@ from queue_fetcher.utils import sqs
 class SQSTestCase(TestCase):
     """Test SQS works in the test mode correctly
     """
-
     def test_sqs(self):
         # Get queue
         queue = sqs.get_queue('test')
@@ -25,12 +24,11 @@ class SQSTestCase(TestCase):
             'this': 'should work'
         })
 
-    @patch('queue_fetcher.utils.sqs.connect_to_region')
+    @patch('boto3.resource')
     @override_settings(TEST_SQS=False)
-    def test_arn(self, connect_to_region):
+    def test_arn(self, resource):
         """Test if using an ARN works
         """
         sqs.get_queue('arn:aws:sqs:nowhere:4444455556666:queuenamehere')
-        connect_to_region.assert_called_with('nowhere')
-        connect_to_region.return_value.get_queue.assert_called_with(
-            'queuenamehere', '4444455556666')
+        resource.assert_called_with('sqs', region_name='nowhere')
+        resource.return_value.get_queue_by_name.assert_called_with(QueueName='queuenamehere', QueueOwnerAWSAccountId='4444455556666')
