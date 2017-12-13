@@ -4,7 +4,6 @@ import json
 import logging
 
 import boto3
-from boto3.exceptions.botocore.client import ClientError
 import six
 
 from django.conf import settings
@@ -86,9 +85,9 @@ def get_queue(name, region_name='eu-west-1', account=None):
             else:
                 queue = sqs.get_queue_by_name(QueueName=queue_name)
 
-        except ClientError as e:
-            print("Error getting queue for name: "
-                  "{} - {}".format(queue_name, e))
+        except Exception as e:
+            logger.warning('Error getting queue for name: %s - %s',
+                           queue_name, e)
 
     return queue
 
