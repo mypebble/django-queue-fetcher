@@ -32,8 +32,8 @@ def _get_sqs_queue(region_name, queue_name, account=None):
 
     if account is not None:
         queue = sqs.get_queue_by_name(
-                QueueName=queue_name,
-                QueueOwnerAWSAccountId=account)
+            QueueName=queue_name,
+            QueueOwnerAWSAccountId=account)
     else:
         queue = sqs.get_queue_by_name(QueueName=queue_name)
 
@@ -80,12 +80,12 @@ def get_queue(name, region_name='eu-west-1', account=None):
         try:
             if account is not None:
                 queue = sqs.get_queue_by_name(
-                        QueueName=queue_name,
-                        QueueOwnerAWSAccountId=account)
+                    QueueName=queue_name,
+                    QueueOwnerAWSAccountId=account)
             else:
                 queue = sqs.get_queue_by_name(QueueName=queue_name)
 
-        except ClientError as e:
+        except boto3.ClientError as e:
             print("Error getting queue for name: "
                   "{} - {}".format(queue_name, e))
 
