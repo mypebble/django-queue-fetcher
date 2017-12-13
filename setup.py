@@ -24,7 +24,7 @@ except Exception:
 
 setup(
     name='queue-fetcher',
-    version='2.0.4',
+    version='2.0.5',
     description="QueueFetcher makes dealing with SQS queues in Django easier",
     author="SF Software limited t/a Pebble",
     author_email="sysadmin@mypebble.co.uk",
