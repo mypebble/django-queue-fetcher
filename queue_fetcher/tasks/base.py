@@ -15,7 +15,7 @@ from django.db import transaction
 from queue_fetcher.utils import sqs
 
 
-# Max number of messages to work on in a cycle - 10 is the maximium supported
+# Max number of messages to work on in a cycle - 10 is the maximum supported
 BATCH_SIZE = 10
 # Max number of seconds to hold request open (long polling)
 WAIT_TIME = 20
@@ -91,10 +91,15 @@ class QueueFetcher(object):
     def _run(self):
         """Do the actual queue_fetcher execution.
         """
-        messages = self._queue.receive_messages(
-            MaxNumberOfMessages=BATCH_SIZE,
-            WaitTimeSeconds=WAIT_TIME,
-            VisibilityTimeout=self.visibility_timeout)
+        if self.visibility_timeout:
+            messages = self._queue.receive_messages(
+                MaxNumberOfMessages=BATCH_SIZE,
+                WaitTimeSeconds=WAIT_TIME,
+                VisibilityTimeout=self.visibility_timeout)
+        else:
+            messages = self._queue.receive_messages(
+                MaxNumberOfMessages=BATCH_SIZE,
+                WaitTimeSeconds=WAIT_TIME)
 
         if len(messages):
             logger.info('%s Received %d messages',
