@@ -12,6 +12,7 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.db import transaction
 
+from queue_fetcher.exceptions import MessageProcessingError
 from queue_fetcher.utils import sqs
 
 
@@ -23,16 +24,11 @@ WAIT_TIME = 20
 logger = logging.getLogger(__name__)
 
 QUEUES_NOT_SETUP = (
-    "QUEUES is not in your application's settings file."
-    "This needs to be a dict of `internal name`: `name on amazon`"
+    "QUEUES is not in your application's settings file. "
+    "This needs to be a dict of `internal name`: `name on amazon`. "
+    "See https://github.com/mypebble/django-queue-fetcher/blob/master/"
+    "README.md#getting-started for more information."
 )
-
-
-class MessageError(Exception):
-    """An error occurred while processing the message
-    and you would like to requeue it
-    """
-    pass
 
 
 class QueueFetcher(object):
@@ -70,15 +66,13 @@ class QueueFetcher(object):
     def _prerun(self):
         """Setup the QueueFetcher for getting messages from SQS.
         """
-        if self.get_queue() is None:
-            raise AttributeError('QueueFetcher.queue is not set')
-
+        queue_key = self._get_queue()
         if not hasattr(settings, 'QUEUES'):
             raise ImproperlyConfigured(QUEUES_NOT_SETUP)
 
-        queue_name = settings.QUEUES[self.get_queue()]
-        logger.info('Polling %s for messages',
-                    queue_name)
+        queue_name = settings.QUEUES[queue_key]
+
+        logger.info('Polling %s for messages', queue_name)
 
         self._queue = sqs.get_queue(queue_name, self.get_region())
 
@@ -87,6 +81,14 @@ class QueueFetcher(object):
         """
         self._prerun()
         self._run()
+
+    def _get_queue(self):
+        """Proxy the get_queue internally.
+        """
+        queue = self.get_queue()
+        if queue is None:
+            raise ImproperlyConfigured('QueueFetcher.queue is not set')
+        return queue
 
     def _run(self):
         """Do the actual queue_fetcher execution.
@@ -119,13 +121,16 @@ class QueueFetcher(object):
         """
         rsp = False
         try:
-            # Use transactions by default in case something goes
-            # wrong, then the database isn't left in a mess
+            # Each iteration of the queue-fetcher should be all-or-nothing.
             with transaction.atomic():
-                if isinstance(q_message, six.string_types):
+                if isinstance(q_message, six.binary_type):
+                    q_message = q_message.decode('utf-8')
+                if isinstance(q_message, six.text_type):
                     q_message = json.loads(q_message)
+
                 self.process(q_message)
-        except MessageError as ex:
+
+        except MessageProcessingError as ex:
             logger.error(six.text_type(ex))
             logger.info('Message could not be processed')
         else:
@@ -142,8 +147,22 @@ class QueueFetcher(object):
         if isinstance(msg, (list, tuple)):  # Handle somewhat invalid data
             for message_item in msg:
                 self.process(message_item)
-        elif hasattr(self, "process_{}".format(msg['message_type'])):
-            getattr(self, "process_{}".format(msg['message_type']))(msg)
         else:
-            raise MessageError('Message type {} not handled'.format(
-                msg['message_type']))
+            try:
+                message_type = msg['message_type']
+            except KeyError:
+                logger.warning('Message did not have a message_type: %s',
+                               six.text_type(msg))
+                raise MessageProcessingError(
+                    'Message did not have a message_type {}'.format(
+                        six.text_type(msg)))
+
+            process = getattr(self, 'process_{}'.format(message_type), None)
+            if process is not None:
+                process(msg)
+            else:
+                logger.warning('Message type %s not handled. You may need to '
+                               'write process_%s.',
+                               message_type, message_type)
+                raise MessageProcessingError(
+                    'Message type {} not handled'.format(message_type))
