@@ -1,5 +1,7 @@
 """Helper functions for interacting with SQS
 """
+from __future__ import absolute_import, print_function, unicode_literals
+
 import json
 import logging
 
@@ -9,6 +11,9 @@ import six
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 
+from queue_fetcher.exceptions import (BotoInitFailedException,
+                                      QueueNotFoundError,
+                                      MessageSendFailed)
 from queue_fetcher.utils.mock_sqs import MockQueue
 
 
@@ -46,7 +51,8 @@ def _is_arn(name):
     return name.startswith('arn:aws:sqs:')
 
 
-def get_queue(name, region_name='eu-west-1', account=None):
+def get_queue(name, region_name='eu-west-1', account=None,
+              raise_exception=True):
     """Return the AWS Queue Object referenced by name.
 
     You can specify a region_name or account to get a specific queue.
@@ -67,32 +73,38 @@ def get_queue(name, region_name='eu-west-1', account=None):
     if account is None:
         queue_name = name
 
+    sqs = boto3.resource('sqs', region_name=region_name)
+
+    if sqs is None:
+        raise BotoInitFailedException('Could not initialise sqs')
+
     if test_sqs:
         if name not in _MOCKS:
             _MOCKS[queue_name] = MockQueue(queue_name)
         queue = _MOCKS[queue_name]
     else:
-        sqs = boto3.resource('sqs', region_name=region_name)
-
-        if sqs is None:
-            raise Exception("could not initialise SQS Resource")
 
         try:
-            if account is not None:
+            if account is None:
+                queue = sqs.get_queue_by_name(QueueName=queue_name)
+            else:
                 queue = sqs.get_queue_by_name(
                     QueueName=queue_name,
                     QueueOwnerAWSAccountId=account)
-            else:
-                queue = sqs.get_queue_by_name(QueueName=queue_name)
 
         except Exception as e:
+            if raise_exception:
+                raise QueueNotFoundError(
+                    'Error getting queue for {}'.format(queue_name))
+
             logger.warning('Error getting queue for name: %s - %s',
                            queue_name, e)
+            queue = None
 
     return queue
 
 
-def send_message(queue, message):
+def send_message(queue, message, raise_exception=True):
     """Send message on queue.
 
     This handles the nitty-gritty of interacting with SQS from your Django app.
@@ -112,27 +124,34 @@ def send_message(queue, message):
         logger.info('New message on queue %s: %s',
                     queue.name, json.dumps(message))
     else:
-        is_text = (
-            isinstance(message, six.string_types)
-            or isinstance(message, six.binary_type)
-        )
+        is_text = (isinstance(message, six.string_types)
+                   or isinstance(message, six.binary_type))
         if not is_text:
             message = json.dumps(message)
 
-        queue.send_message(MessageBody=message)
+        try:
+            queue.send_message(MessageBody=message)
+        except Exception as exc:
+            if raise_exception:
+                raise MessageSendFailed(
+                    'Could not send message {} over queue {}'.format(message,
+                                                                     queue))
+            logger.warning('Could not send message over queue %s - %s',
+                           six.text_type(queue),
+                           six.text_type(exc))
 
 
-def queue_send(queue, message):
+def queue_send(queue, message, raise_exception=True):
     """Combined queue retrieval and send
     """
-    queue = get_queue(settings.QUEUES[queue])
-    send_message(queue, message)
+    queue = get_queue(settings.QUEUES[queue], raise_exception=raise_exception)
+    send_message(queue, message, raise_exception=raise_exception)
 
 
-def requeue(queue, message):
+def requeue(queue, message, raise_exception=True):
     """Put the message back on the queue.
     """
-    queue_send(queue, [message])
+    queue_send(queue, [message], raise_exception=raise_exception)
 
 
 def clear_outbox():
