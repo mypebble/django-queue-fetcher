@@ -116,19 +116,19 @@ def send_message(queue, message, raise_exception=True):
     except AttributeError:
         raise ImproperlyConfigured(SQS_NOT_SETUP)
 
+    is_text = (isinstance(message, six.string_types)
+               or isinstance(message, six.binary_type))
+    if not is_text:
+        message = json.dumps(message)
+
     if test_sqs:
         # Test Mode: Don't even try and send it!
         if queue.name not in outbox:
             outbox[queue.name] = []
         outbox[queue.name].append(message)
         logger.info('New message on queue %s: %s',
-                    queue.name, json.dumps(message))
+                    queue.name, message)
     else:
-        is_text = (isinstance(message, six.string_types)
-                   or isinstance(message, six.binary_type))
-        if not is_text:
-            message = json.dumps(message)
-
         try:
             queue.send_message(MessageBody=message)
         except Exception as exc:
