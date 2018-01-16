@@ -118,17 +118,24 @@ def send_message(queue, message, raise_exception=True):
 
     is_text = (isinstance(message, six.string_types)
                or isinstance(message, six.binary_type))
-    if not is_text:
-        message = json.dumps(message)
 
     if test_sqs:
         # Test Mode: Don't even try and send it!
+        log_message = message
+        if not is_text:
+            log_message = json.dumps(message)
+        else:
+            message = json.loads(six.text_type(message))
+
         if queue.name not in outbox:
             outbox[queue.name] = []
         outbox[queue.name].append(message)
         logger.info('New message on queue %s: %s',
-                    queue.name, message)
+                    queue.name, json.dumps(log_message))
     else:
+        if not is_text:
+            message = json.dumps(message)
+
         try:
             queue.send_message(MessageBody=message)
         except Exception as exc:
