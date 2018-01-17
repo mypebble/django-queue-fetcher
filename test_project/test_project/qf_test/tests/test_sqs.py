@@ -29,6 +29,23 @@ class SQSTestCase(TestCase):
             'this': 'should work'
         })
 
+    def test_sqs_list(self):
+        """Test the send_message method with a list.
+        """
+        # Get queue
+        queue = sqs.get_queue('test')
+        self.assertEquals(queue.name, 'test')  # Send a message
+        sqs.send_message(queue, [{
+            'message_type': 'demo',
+            'this': 'should work'
+        }])
+        # It should drop into the outbox
+        self.assertEquals(len(sqs.outbox['test']), 1)
+        self.assertEquals(sqs.outbox['test'][0], [{
+            'message_type': 'demo',
+            'this': 'should work'
+        }])
+
     def test_sqs_string(self):
         """Test the send_message method with a string.
         """
