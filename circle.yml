@@ -6,3 +6,7 @@ test:
   override:
     - python setup.py develop
     - python test_project/manage.py test test_project/test_project
+
+machine:
+  python:
+    version: 3.5.4
