@@ -1,0 +1,23 @@
+version: 2
+
+jobs:
+  build:
+    docker:
+      - image: circleci/python:3.5.3
+
+    steps:
+      - checkout
+
+      - run:
+          name: Install dependencies in venv
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            bash -c "pip install -r dev_requirements.txt"
+
+      - run:
+          name: Run tests
+          command: |
+            . venv/bin/activate
+            python setup.py develop
+            python test_project/manage.py test test_project/test_project
