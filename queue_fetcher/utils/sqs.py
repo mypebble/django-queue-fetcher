@@ -124,6 +124,9 @@ def send_message(queue, message, raise_exception=True):
     if test_sqs:
         # Test Mode: Don't even try and send it!
         if is_text:
+            if isinstance(message, six.binary_type):
+                message = message.decode('utf-8')
+
             message = json.loads(message)
 
         if queue.name not in outbox:
