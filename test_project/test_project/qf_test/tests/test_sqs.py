@@ -1,3 +1,5 @@
+import json
+
 from mock import patch
 
 from django.test import TestCase, override_settings
@@ -15,6 +17,8 @@ class SQSTestCase(TestCase):
         sqs.clear_outbox()
 
     def test_sqs(self):
+        """Test the send_message method with a dict.
+        """
         # Get queue
         queue = sqs.get_queue('test')
         self.assertEquals(queue.name, 'test')  # Send a message
@@ -78,8 +82,69 @@ class SQSTestCase(TestCase):
             'this': 'should work'
         })
 
+
+@override_settings(TEST_SQS=False)
+class SQSProductionTestCase(TestCase):
+    """Test SQS methods with TEST_SQS = False.
+    """
+
+    @patch('queue_fetcher.utils.sqs.get_queue')
+    def test_sqs(self, mock_queue):
+        """Test the send_message method with a dict.
+        """
+        message = [{
+            'message_type': 'demo',
+            'this': 'should work'
+        }]
+
+        sqs.send_message(mock_queue, message)
+
+        _args, cwargs = mock_queue.send_message.call_args
+        self.assertEqual(cwargs['MessageBody'], json.dumps(message))
+
+    @patch('queue_fetcher.utils.sqs.get_queue')
+    def test_sqs_list(self, mock_queue):
+        """Test the send_message method with a list.
+        """
+        message = [{
+            'message_type': 'demo',
+            'this': 'should work'
+        }]
+
+        sqs.send_message(mock_queue, message)
+
+        _args, cwargs = mock_queue.send_message.call_args
+        self.assertEqual(cwargs['MessageBody'], json.dumps(message))
+
+    @patch('queue_fetcher.utils.sqs.get_queue')
+    def test_sqs_string(self, mock_queue):
+        """Test the send_message method with a string.
+        """
+        message = json.dumps({
+            'message_type': 'demo',
+            'this': 'should work'
+        })
+
+        sqs.send_message(mock_queue, message)
+
+        _args, cwargs = mock_queue.send_message.call_args
+        self.assertEqual(cwargs['MessageBody'], message)
+
+    @patch('queue_fetcher.utils.sqs.get_queue')
+    def test_sqs_binary(self, mock_queue):
+        """Test the send_message method with a binary string.
+        """
+        message = json.dumps({
+            'message_type': 'demo',
+            'this': 'should work'
+        })
+
+        sqs.send_message(mock_queue, message.encode('utf-8'))
+
+        _args, cwargs = mock_queue.send_message.call_args
+        self.assertEqual(cwargs['MessageBody'], message)
+
     @patch('boto3.resource')
-    @override_settings(TEST_SQS=False)
     def test_arn(self, resource):
         """Test if using an ARN works
         """
