@@ -1,4 +1,4 @@
 boto3==1.4.8
-django==1.9.6
+django==2.2.24
 six==1.10.0
 mock==2.0.0
